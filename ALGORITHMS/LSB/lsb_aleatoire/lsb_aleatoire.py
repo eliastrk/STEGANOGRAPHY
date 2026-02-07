@@ -90,7 +90,7 @@ def lsb_aleatoire_encodeur(image_path: str, message: str, header_len: int, canal
         if is_grayscale:
             img[i, j] = val_int
         else:
-            print(i,j,canal)
+            #print(i,j,canal)
             img[i, j, canal] = val_int
 
         index_pixel += 1

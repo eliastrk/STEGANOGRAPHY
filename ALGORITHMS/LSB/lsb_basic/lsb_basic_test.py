@@ -1,9 +1,17 @@
 from __future__ import annotations
 
-import cv2
+import sys
 from pathlib import Path
 
+import cv2
+
+script_dir = Path(__file__).resolve().parent
+project_root = script_dir.parents[2]
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 from lsb_basic import lsb_basic_encodeur, lsb_basic_decodeur
+from ALGORITHMS.histogramme.histogramme import calculer_histogrammes_rgb, corr_histogrammes, save_histogram_rgb
 
 
 if __name__ == "__main__":
@@ -22,8 +30,6 @@ if __name__ == "__main__":
     #IMAGE 1
     
     #Path de l'image 1
-    script_dir = Path(__file__).resolve().parent
-    project_root = script_dir.parents[2]
     image1_path = project_root / "DB_STEGANOGRAPHIE" / "RGB-BMP Steganalysis Dataset" / "CALTECH-BMP-1500" / "C0002.bmp"
     resultats_dir = script_dir / "resultats"
     resultats_dir.mkdir(parents=True, exist_ok=True)
@@ -69,3 +75,25 @@ if __name__ == "__main__":
     print("IMAGE 1")
     print(f"Message encodé : {message1_original}")
     print(f"Message décodé : {message1_stego}")
+    print()
+    print()
+
+
+    #HISTOGRAMME IMAGE 1
+    save_histogram_rgb(image1, resultats_dir / "histogramme_image1_originale.png", "Histogramme RGB - Image 1 Originale",)
+    save_histogram_rgb(image1_stego, resultats_dir / "histogramme_image1_stego.png", "Histogramme RGB - Image 1 Stego",)
+
+    h1_origine = calculer_histogrammes_rgb(image1)
+    h1_stego = calculer_histogrammes_rgb(image1_stego)
+    
+    print("Correlation histogramme IMAGE 1 (meme image, doit etre 1.0):")
+    for i, canal in enumerate(("B", "G", "R")):
+        corr = corr_histogrammes([h1_origine[i]], [h1_origine[i]])[0]
+        print(f"{canal}: {corr}")
+    
+    print()
+        
+    print("Correlation histogramme IMAGE 1 (original vs stego):")
+    for i, canal in enumerate(("B", "G", "R")):
+        corr = corr_histogrammes([h1_origine[i]], [h1_stego[i]])[0]
+        print(f"{canal}: {corr}")
