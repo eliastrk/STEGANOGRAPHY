@@ -44,3 +44,9 @@ if __name__ == "__main__":
     corrs = corr_histogrammes(h_origine, h_stego)
     for canal, corr in zip(("B", "G", "R"), corrs):
         print(f"{canal}: {corr}")
+        
+    print()
+    print()
+    
+    psnr = cv2.PSNR(original, stego)
+    print("PSNR:", psnr, "dB")
