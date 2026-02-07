@@ -4,54 +4,13 @@ import sys
 from pathlib import Path
 
 import cv2
-from matplotlib import pyplot as plt
-
 script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parents[2]
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from ALGORITHMS.LSB.lsb_basic_v2.lsb_basic_v2 import lsb_basic_encodeur_v2, lsb_basic_decodeur_v2
-
-
-def sauvegarder_histogramme_rgb(image, output_path, titre):
-    colors = ("b", "g", "r")
-    plt.figure(figsize=(10, 5))
-    for i, col in enumerate(colors):
-        hist = cv2.calcHist([image], [i], None, [256], [0, 256])
-        plt.plot(hist, color=col)
-    plt.title(titre)
-    plt.xlabel("IntensitÃ© (0-255)")
-    plt.ylabel("Nombre de pixels")
-    plt.tight_layout()
-    plt.savefig(str(output_path))
-    plt.close()
-
-
-def sauvegarder_histogramme_grayscale(image, output_path, titre):
-    plt.figure(figsize=(10, 5))
-    hist = cv2.calcHist([image], [0], None, [256], [0, 256])
-    plt.plot(hist, color="black")
-    plt.title(titre)
-    plt.xlabel("IntensitÃ© (0-255)")
-    plt.ylabel("Nombre de pixels")
-    plt.tight_layout()
-    plt.savefig(str(output_path))
-    plt.close()
-
-
-def calculer_histogrammes_rgb(image):
-    hists = []
-    for i in range(3):
-        hist = cv2.calcHist([image], [i], None, [256], [0, 256])
-        hist = cv2.normalize(hist, hist).flatten()
-        hists.append(hist)
-    return hists
-
-
-def calculer_histogramme_grayscale(image):
-    hist = cv2.calcHist([image], [0], None, [256], [0, 256])
-    return cv2.normalize(hist, hist).flatten()
+from ALGORITHMS.histogramme.histogramme import calculer_histogramme_grayscale, calculer_histogrammes_rgb, corr_histogrammes, save_histogram_grayscale, save_histogram_rgb
 
 
 if __name__ == "__main__":
@@ -119,27 +78,24 @@ if __name__ == "__main__":
     print()
 
     #HISTOGRAMME IMAGE 1
-    sauvegarder_histogramme_rgb(
-        image1,
-        resultats_dir / "histogramme_image1_originale.png",
-        "Histogramme RGB - Image 1 Originale",
-    )
-    sauvegarder_histogramme_rgb(
-        image1_stego,
-        resultats_dir / "histogramme_image1_stego.png",
-        "Histogramme RGB - Image 1 Stego",
-    )
+    save_histogram_rgb(image1, resultats_dir / "histogramme_image1_originale.png", "Histogramme RGB - Image 1 Originale")
+    save_histogram_rgb(image1_stego, resultats_dir / "histogramme_image1_stego.png", "Histogramme RGB - Image 1 Stego")
 
-    h1_orig = calculer_histogrammes_rgb(image1)
+    h1_origine = calculer_histogrammes_rgb(image1)
     h1_stego = calculer_histogrammes_rgb(image1_stego)
+    
     print("Correlation histogramme IMAGE 1 (meme image, doit etre 1.0):")
     for i, canal in enumerate(("B", "G", "R")):
-        corr = cv2.compareHist(h1_orig[i], h1_orig[i], cv2.HISTCMP_CORREL)
+        corr = corr_histogrammes([h1_origine[i]], [h1_origine[i]])[0]
         print(f"{canal}: {corr}")
+        
+    print()
+        
     print("Correlation histogramme IMAGE 1 (original vs stego):")
     for i, canal in enumerate(("B", "G", "R")):
-        corr = cv2.compareHist(h1_orig[i], h1_stego[i], cv2.HISTCMP_CORREL)
+        corr = corr_histogrammes([h1_origine[i]], [h1_stego[i]])[0]
         print(f"{canal}: {corr}")
+        
     print()
     print()
     
@@ -197,24 +153,20 @@ if __name__ == "__main__":
     print()
 
     #HISTOGRAMME IMAGE 2
-    sauvegarder_histogramme_grayscale(
-        image2,
-        resultats_dir / "histogramme_image2_originale.png",
-        "Histogramme Grayscale - Image 2 Originale",
-    )
-    sauvegarder_histogramme_grayscale(
-        image2_stego,
-        resultats_dir / "histogramme_image2_stego.png",
-        "Histogramme Grayscale - Image 2 Stego",
-    )
+    save_histogram_grayscale(image2, resultats_dir / "histogramme_image2_originale.png", "Histogramme Grayscale - Image 2 Originale")
+    save_histogram_grayscale(image2_stego, resultats_dir / "histogramme_image2_stego.png", "Histogramme Grayscale - Image 2 Stego")
 
-    h2_orig = calculer_histogramme_grayscale(image2)
+    h2_origine = calculer_histogramme_grayscale(image2)
     h2_stego = calculer_histogramme_grayscale(image2_stego)
+    
     print("Correlation histogramme IMAGE 2 (meme image, doit etre 1.0):")
-    corr_same = cv2.compareHist(h2_orig, h2_orig, cv2.HISTCMP_CORREL)
+    corr_same = corr_histogrammes([h2_origine], [h2_origine])[0]
     print(f"Grayscale: {corr_same}")
+    
+    print()
+    
     print("Correlation histogramme IMAGE 2 (original vs stego):")
-    corr_diff = cv2.compareHist(h2_orig, h2_stego, cv2.HISTCMP_CORREL)
+    corr_diff = corr_histogrammes([h2_origine], [h2_stego])[0]
     print(f"Grayscale: {corr_diff}")
     
     
