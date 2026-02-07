@@ -1,0 +1,220 @@
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import cv2
+from matplotlib import pyplot as plt
+
+script_dir = Path(__file__).resolve().parent
+project_root = script_dir.parents[2]
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+from ALGORITHMS.LSB.lsb_basic_v2.lsb_basic_v2 import lsb_basic_encodeur_v2, lsb_basic_decodeur_v2
+
+
+def sauvegarder_histogramme_rgb(image, output_path, titre):
+    colors = ("b", "g", "r")
+    plt.figure(figsize=(10, 5))
+    for i, col in enumerate(colors):
+        hist = cv2.calcHist([image], [i], None, [256], [0, 256])
+        plt.plot(hist, color=col)
+    plt.title(titre)
+    plt.xlabel("IntensitÃ© (0-255)")
+    plt.ylabel("Nombre de pixels")
+    plt.tight_layout()
+    plt.savefig(str(output_path))
+    plt.close()
+
+
+def sauvegarder_histogramme_grayscale(image, output_path, titre):
+    plt.figure(figsize=(10, 5))
+    hist = cv2.calcHist([image], [0], None, [256], [0, 256])
+    plt.plot(hist, color="black")
+    plt.title(titre)
+    plt.xlabel("IntensitÃ© (0-255)")
+    plt.ylabel("Nombre de pixels")
+    plt.tight_layout()
+    plt.savefig(str(output_path))
+    plt.close()
+
+
+def calculer_histogrammes_rgb(image):
+    hists = []
+    for i in range(3):
+        hist = cv2.calcHist([image], [i], None, [256], [0, 256])
+        hist = cv2.normalize(hist, hist).flatten()
+        hists.append(hist)
+    return hists
+
+
+def calculer_histogramme_grayscale(image):
+    hist = cv2.calcHist([image], [0], None, [256], [0, 256])
+    return cv2.normalize(hist, hist).flatten()
+
+
+if __name__ == "__main__":
+    
+    #DATA
+    
+    header_len8 = 8
+    header_len16 = 16
+    header_len24 = 24
+    header_len32 = 32
+    
+    canalBleu, canalVert, canalRouge = 0, 1, 2
+    
+
+    #IMAGE 1 RGB
+    
+    #Path de l'image 1
+    image1_path = project_root / "DB_STEGANOGRAPHIE" / "RGB-BMP Steganalysis Dataset" / "CALTECH-BMP-1500" / "C0002.bmp"
+    resultats_dir = script_dir / "resultats"
+    resultats_dir.mkdir(parents=True, exist_ok=True)
+    
+    #On lit l'image 1
+    image1 = cv2.imread(str(image1_path), cv2.IMREAD_UNCHANGED)
+    
+    if image1 is None:
+        print("Erreur : Impossible de charger l'image1")
+    
+    #On sauvegarde l'image 1
+    cv2.imwrite(str(resultats_dir / "image1_originale.bmp"), image1)
+    
+    
+    #ENCODE 
+    
+    #Path de l'image 1 originale
+    image1_originale_path = resultats_dir / "image1_originale.bmp"
+    
+    #Message
+    message1_original = "Le vent glissait entre les immeubles comme une rumeur ancienne, une lumière pâle clignotait en hésitant entre la nuit et l aube, des pas résonnaient au loin sans que personne ne semble arriver, et quelque part une idée naissait, discrète mais impossible à ignorer."
+    
+    #On encode le message dans l'image
+    image1_stego = lsb_basic_encodeur_v2(str(image1_originale_path), message1_original, header_len16, canalBleu)
+    
+    #On sauvegarde l'image stego
+    cv2.imwrite(str(resultats_dir / "image1_stego.bmp"), image1_stego)
+    
+    
+    #DECODE
+    
+    #Path de l'image stego
+    image1_stego_path = resultats_dir / "image1_stego.bmp"
+    
+    #On decode le message de l'image
+    message1_stego = lsb_basic_decodeur_v2(str(image1_stego_path), header_len16, canalBleu)
+    
+    if image1_stego is None:
+        print("Erreur : Le décodage a échoué")
+    
+    
+    #VERIFICATION
+    
+    print("IMAGE 1")
+    print(f"Message encodé : {message1_original}")
+    print()
+    print(f"Message décodé : {message1_stego}")
+    print()
+
+    #HISTOGRAMME IMAGE 1
+    sauvegarder_histogramme_rgb(
+        image1,
+        resultats_dir / "histogramme_image1_originale.png",
+        "Histogramme RGB - Image 1 Originale",
+    )
+    sauvegarder_histogramme_rgb(
+        image1_stego,
+        resultats_dir / "histogramme_image1_stego.png",
+        "Histogramme RGB - Image 1 Stego",
+    )
+
+    h1_orig = calculer_histogrammes_rgb(image1)
+    h1_stego = calculer_histogrammes_rgb(image1_stego)
+    print("Correlation histogramme IMAGE 1 (meme image, doit etre 1.0):")
+    for i, canal in enumerate(("B", "G", "R")):
+        corr = cv2.compareHist(h1_orig[i], h1_orig[i], cv2.HISTCMP_CORREL)
+        print(f"{canal}: {corr}")
+    print("Correlation histogramme IMAGE 1 (original vs stego):")
+    for i, canal in enumerate(("B", "G", "R")):
+        corr = cv2.compareHist(h1_orig[i], h1_stego[i], cv2.HISTCMP_CORREL)
+        print(f"{canal}: {corr}")
+    print()
+    print()
+    
+    
+    
+    #IMAGE 2 Grayscale
+    
+    #Path de l'image 2
+    image2_path = project_root / "DB_STEGANOGRAPHIE" / "BOSSbase_1.01" / "1.pgm"
+    resultats_dir = script_dir / "resultats"
+    resultats_dir.mkdir(parents=True, exist_ok=True)
+    
+    #On lit l'image 2
+    image2 = cv2.imread(str(image2_path), cv2.IMREAD_UNCHANGED)
+    
+    if image2 is None:
+        print("Erreur : Impossible de charger l'image2")
+    
+    #On sauvegarde l'image 2
+    cv2.imwrite(str(resultats_dir / "image2_originale.bmp"), image2)
+    
+    
+    #ENCODE 
+    
+    #Path de l'image 2 originale
+    image2_originale_path = resultats_dir / "image2_originale.bmp"
+    
+    #Message
+    message2_original = "Le vent glissait entre les immeubles comme une rumeur ancienne, une lumière pâle clignotait en hésitant entre la nuit et l aube, des pas résonnaient au loin sans que personne ne semble arriver, et quelque part une idée naissait, discrète mais impossible à ignorer."
+    
+    #On encode le message dans l'image
+    image2_stego = lsb_basic_encodeur_v2(str(image2_originale_path), message2_original, header_len24, canalBleu)
+    
+    #On sauvegarde l'image stego
+    cv2.imwrite(str(resultats_dir / "image2_stego.bmp"), image2_stego)
+    
+    
+    #DECODE
+    
+    #Path de l'image stego
+    image2_stego_path = resultats_dir / "image2_stego.bmp"
+    
+    #On decode le message de l'image
+    message2_stego = lsb_basic_decodeur_v2(str(image2_stego_path), header_len24, canalBleu)
+    if image2_stego is None:
+        print("Erreur : Le décodage a échoué")
+    
+    
+    #VERIFICATION
+    
+    print("IMAGE 2")
+    print(f"Message encodé : {message2_original}")
+    print()
+    print(f"Message décodé : {message2_stego}")
+    print()
+
+    #HISTOGRAMME IMAGE 2
+    sauvegarder_histogramme_grayscale(
+        image2,
+        resultats_dir / "histogramme_image2_originale.png",
+        "Histogramme Grayscale - Image 2 Originale",
+    )
+    sauvegarder_histogramme_grayscale(
+        image2_stego,
+        resultats_dir / "histogramme_image2_stego.png",
+        "Histogramme Grayscale - Image 2 Stego",
+    )
+
+    h2_orig = calculer_histogramme_grayscale(image2)
+    h2_stego = calculer_histogramme_grayscale(image2_stego)
+    print("Correlation histogramme IMAGE 2 (meme image, doit etre 1.0):")
+    corr_same = cv2.compareHist(h2_orig, h2_orig, cv2.HISTCMP_CORREL)
+    print(f"Grayscale: {corr_same}")
+    print("Correlation histogramme IMAGE 2 (original vs stego):")
+    corr_diff = cv2.compareHist(h2_orig, h2_stego, cv2.HISTCMP_CORREL)
+    print(f"Grayscale: {corr_diff}")
+    
+    
