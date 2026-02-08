@@ -50,3 +50,11 @@ if __name__ == "__main__":
     
     psnr = cv2.PSNR(original, stego)
     print("PSNR:", psnr, "dB")
+
+    print()
+    print()
+    
+    #SSIM
+    ssim, ssim_map = cv2.quality.QualitySSIM_compute(original, stego)
+    print("SSIM:", ssim[0])
+    

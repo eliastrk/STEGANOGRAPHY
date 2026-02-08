@@ -106,6 +106,13 @@ if __name__ == "__main__":
     print()
     print()
     
+    #SSIM
+    ssim, ssim_map = cv2.quality.QualitySSIM_compute(image1, image1_stego)
+    print("SSIM:", ssim[0])
+    
+    print()
+    print()
+    
     
     
     #IMAGE 2 Grayscale
@@ -182,6 +189,13 @@ if __name__ == "__main__":
     #PSNR
     psnr = cv2.PSNR(image2, image2_stego)
     print("PSNR:", psnr, "dB")
+    
+    print()
+    print()
+    
+    #SSIM
+    ssim, ssim_map = cv2.quality.QualitySSIM_compute(image2, image2_stego)
+    print("SSIM:", ssim[0])
     
     
     

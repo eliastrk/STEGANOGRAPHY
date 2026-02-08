@@ -107,3 +107,7 @@ if __name__ == "__main__":
     
     print()
     print()
+    
+    #SSIM
+    ssim, ssim_map = cv2.quality.QualitySSIM_compute(image1, image1_stego)
+    print("SSIM:", ssim[0])
