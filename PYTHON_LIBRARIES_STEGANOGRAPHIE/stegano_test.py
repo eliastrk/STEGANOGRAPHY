@@ -1,5 +1,5 @@
 import cv2
-
+import random
                 
 """
     
@@ -51,6 +51,7 @@ print(binary[30] == '0')
 
 """
 
+"""
 img1 = cv2.imread("../DB_STEGANOGRAPHIE/BOSSbase_1.01/1.pgm", cv2.IMREAD_UNCHANGED)   # ou .jpg, .bmp, etc.
 
 if img1 is None:
@@ -65,3 +66,11 @@ if img2 is None:
     print("Erreur : image non chargée")
 
 print(img2.shape)
+"""
+
+
+cle = 1234
+n = 10
+rCanal = random.Random(cle)
+liste = [rCanal.randint(0, 2) for _ in range(n)]
+print(liste)
