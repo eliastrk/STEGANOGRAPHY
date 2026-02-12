@@ -63,7 +63,7 @@ def lsb_basic_encodeur_v2(image_path: str, message: str, header_len: int, canal:
             val_int = int(val)
             
             #Choix de delta
-            delta = choix_delta(val)
+            delta = choix_delta(val_int)
             
             #Taille du message dans le header
             if index_pixel < header_len: 

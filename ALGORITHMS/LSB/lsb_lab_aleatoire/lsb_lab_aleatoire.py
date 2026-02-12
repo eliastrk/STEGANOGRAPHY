@@ -10,39 +10,38 @@ import numpy as np
 from ALGORITHMS.LSB.functions_lsb import choix_delta, modif_bit, build_binary_lsb
 
 
-def lsb_aleatoire_encodeur(image_path: str, message: str, header_len: int, canal: int, cle: int) -> Optional[np.ndarray]:
+def lsb_lab_aleatoire_encodeur(image_path: str, message: str, header_len: int, cle_pixels: int, cle_canal: int) -> Optional[np.ndarray]:
     """
     Encode un message texte avec lsb dans un canal de l'image.
     La longueur du message (en bits) est d'abord écrite dans un en-tête de header_len bits,
-    puis le contenu est inséré bit par bit dans des pixels choisis aléatoirement selon une clé.
+    puis le contenu est inséré bit par bit dans des pixels (LAB) choisis aléatoirement selon une clé pour les pixels et les canaux.
 
     Args:
         image_path (str): path vers l'image
         message (str): message à cacher
         header_len (int): taille de l'entête en bits qui contiendra la taille du message
-        canal (int): dans quel canal on va appliquer lsb (0=Bleu, 1=Vert, 2=Rouge)
-        cle (int): clé pour générer l'ordre aléatoire des pixels
+        cle_pixels (int): clé pour générer l'ordre aléatoire des pixels
+        cle_canal (int): clé pour générer l'ordre aléatoire des canals
 
     Returns:
         np.ndarray: L'image modifiée avec le message caché dedans, None si erreur
     """
 
     #On charge l'_path sous la forme d'une matrice à 3 dimensions
-    img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+    img = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
     #Si on arrive pas à charger l'image
     if img is None:
         print("Erreur : Impossible de charger l'image")
         return None
-
-    #On teste si c'est une image rgb ou grayscale
-    is_grayscale = (img.ndim == 2)
-    print("Grayscale") if is_grayscale else print("RGB")
+    
+    #On charge LAB
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
 
     #Si il y a pas assez de pixels pour cacher le message
     len_message = len(message) * 8
     total_len = len_message + header_len
-    h, w = img.shape[:2]
+    h, w = lab.shape[:2]
     total_pixels = h*w
 
     if total_pixels < total_len:
@@ -58,17 +57,19 @@ def lsb_aleatoire_encodeur(image_path: str, message: str, header_len: int, canal
     index_bit = 0
 
     #Ordre aléatoire des pixels selon la clé
-    positions = list(range(total_pixels))
-    random.Random(cle).shuffle(positions)
+    liste_pixels = list(range(total_pixels))
+    random.Random(cle_pixels).shuffle(liste_pixels)
+    
+    #Ordre aléatoire des canaux LAB selon la clé
+    rCanal = random.Random(cle_canal)
+    liste_canals = [rCanal.randint(1, 2) for _ in range(total_pixels)]
 
     #On regarde la valeur de chaque pixel dans le canal choisi en argument
-    for pos in positions:
-        i = pos // w
-        j = pos % w
+    for pixel in liste_pixels:
+        i = pixel // w
+        j = pixel % w
 
-        #grayscale ou non
-        val = img[i, j] if is_grayscale else img[i, j, canal]
-        val_int = int(val)
+        val_int = int(lab[i, j, liste_canals[index_pixel]])
 
         #Choix de delta
         delta = choix_delta(val_int)
@@ -87,47 +88,45 @@ def lsb_aleatoire_encodeur(image_path: str, message: str, header_len: int, canal
                 index_bit = 0
                 index_message += 1
 
-        if is_grayscale:
-            img[i, j] = val_int
-        else:
-            #print(i,j,canal)
-            img[i, j, canal] = val_int
+        #print(lab[i, j, liste_canals[index_pixel]])
+        lab[i, j, liste_canals[index_pixel]] = val_int
 
         index_pixel += 1
 
         #On sort complètement de la boucle quand on a parcourut le nombre de pixels necessaires
         if index_pixel >= total_len:
-            return img
+            rgb = cv2.cvtColor(lab, cv2.COLOR_Lab2BGR)
+            return rgb
 
-    return img
+    return cv2.cvtColor(lab, cv2.COLOR_Lab2BGR)
 
 
-def lsb_aleatoire_decodeur(image_path: str, header_len: int, canal: int, cle: int) -> Optional[str]:
+def lsb_lab_aleatoire_decodeur(image_path: str, header_len: int, cle_pixels: int, cle_canal: int) -> Optional[str]:
     """
     Décode un message texte avec lsb dans un canal de l'image.
     La longueur du message (en bits) se situe dans un en-tête de header_len bits,
-    puis on récupère le contenu bit par bit dans des pixels choisis aléatoirement selon une clé.
+    puis on récupère le contenu bit par bit dans des pixels (LAB) choisis aléatoirement selon une clé pour les pixels et les canaux.
 
     Args:
         image_path (str): path vers l'image
         header_len (int): taille de l'entête en bits qui contiendra la taille du message
-        canal (int): dans quel canal on va decoder lsb (0=Bleu, 1=Vert, 2=Rouge)
-        cle (int): clé pour générer l'ordre aléatoire des pixels
+        cle_pixels (int): clé pour générer l'ordre aléatoire des pixels
+        cle_canal (int): clé pour générer l'ordre aléatoire des canals
 
     Returns:
         str: Le message caché dans l'image avec lsb, None si erreur
     """
 
     #On charge l'_path sous la forme d'une matrice à 3 dimensions
-    img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+    img = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
     #Si on arrive pas à charger l'image
     if img is None:
         print("Erreur : Impossible de charger l'image")
         return None
-
-    #On teste si c'est une image rgb ou grayscale
-    is_grayscale = (img.ndim == 2)
+    
+    #On charge LAB
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
 
     #Initialisations des variables pour le parcours des pixels
     index_pixel = 0
@@ -136,20 +135,23 @@ def lsb_aleatoire_decodeur(image_path: str, header_len: int, canal: int, cle: in
     count_bit = 0
     message = ""
 
-    h, w = img.shape[:2]
+    h, w = lab.shape[:2]
     total_pixels = h * w
 
     #Ordre aléatoire des pixels selon la clé
-    positions = list(range(total_pixels))
-    random.Random(cle).shuffle(positions)
+    liste_pixels = list(range(total_pixels))
+    random.Random(cle_pixels).shuffle(liste_pixels)
 
+    #Ordre aléatoire des canaux LAB selon la clé
+    rCanal = random.Random(cle_canal)
+    liste_canals = [rCanal.randint(1, 2) for _ in range(total_pixels)]
+        
     #On regarde la valeur de chaque pixel dans le canal choisi en argument
-    for pos in positions:
-        i = pos // w
-        j = pos % w
+    for pixel in liste_pixels:
+        i = pixel // w
+        j = pixel % w
 
-        #grayscale ou non
-        val = img[i, j] if is_grayscale else img[i, j, canal]
+        val = lab[i, j, liste_canals[index_pixel]]
 
         #On récupère la taille du message dans le header
         if index_pixel < header_len:
