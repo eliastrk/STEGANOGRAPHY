@@ -5,9 +5,11 @@ lsb_aleatoire_v2-> SSIM: 0.999817445187773
 lsb_aleatoire 	-> SSIM: 0.9994467356389123
 lsb_basic_v2 	-> SSIM: 0.9995863445233226 et Grayscale : SSIM: 0.9995100306475706
 lsb_basic 	-> SSIM: 0.9995872586721362
+lsb_lab(light)	-> SSIM: 0.9995877467604259
 
 bdd 		-> PSNR: 52.19171715377844 dB
 lsb_aleatoire_v2-> PSNR: 65.25699580248593 dB
 lsb_aleatoire 	-> PSNR: 65.18465880982272 dB
 lsb_basic_v2 	-> PSNR: 65.33142758020857 dB et Grayscale : PSNR: 60.88574239481983 dB
 lsb_basic 	-> PSNR: 65.33142758020857 dB
+lsb_lab(light)	-> PSNR: 65.33142758020857 dB
