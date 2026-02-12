@@ -4,6 +4,8 @@ import sys
 from pathlib import Path
 
 import cv2
+import numpy as np
+
 script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parents[2]
 if str(project_root) not in sys.path:
@@ -112,6 +114,21 @@ if __name__ == "__main__":
     
     print()
     print()
+    
+    orig_lab = cv2.cvtColor(image1, cv2.COLOR_BGR2Lab)
+    steg_lab = cv2.cvtColor(image1_stego, cv2.COLOR_BGR2Lab)
+
+    diff_lab = cv2.absdiff(orig_lab, steg_lab)
+
+    print("Pixels changés en LAB (L,a,b):",
+        np.count_nonzero(diff_lab[:,:,0]),
+        np.count_nonzero(diff_lab[:,:,1]),
+        np.count_nonzero(diff_lab[:,:,2]))
+
+    print("Max diff en LAB (L,a,b):",
+        diff_lab[:,:,0].max(),
+        diff_lab[:,:,1].max(),
+        diff_lab[:,:,2].max())
     
     
     

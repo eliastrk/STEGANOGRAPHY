@@ -4,13 +4,15 @@ import sys
 from pathlib import Path
 
 import cv2
+import numpy as np
+
 script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parents[2]
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from ALGORITHMS.LSB.lsb_basic_v2.lsb_basic_v2 import lsb_basic_encodeur_v2, lsb_basic_decodeur_v2
-from ALGORITHMS.histogramme.histogramme import calculer_histogramme_grayscale, calculer_histogrammes_rgb, corr_histogrammes, save_histogram_grayscale, save_histogram_rgb
+from ALGORITHMS.LSB.lsb_lab.lsb_lab import lsb_lab_encodeur, lsb_lab_decodeur
+from ALGORITHMS.histogramme.histogramme import calculer_histogrammes_rgb, corr_histogrammes, save_histogram_grayscale, save_histogram_rgb
 
 
 if __name__ == "__main__":
@@ -33,7 +35,7 @@ if __name__ == "__main__":
     resultats_dir.mkdir(parents=True, exist_ok=True)
     
     #On lit l'image 1
-    image1 = cv2.imread(str(image1_path), cv2.IMREAD_UNCHANGED)
+    image1 = cv2.imread(str(image1_path), cv2.IMREAD_COLOR)
     
     if image1 is None:
         print("Erreur : Impossible de charger l'image1")
@@ -51,7 +53,7 @@ if __name__ == "__main__":
     message1_original = ("Bonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjnBonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjnBonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjnBonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjnBonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjnBonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjnBonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjnBonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjnBonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjnBonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjnBonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjnBonsoir comment allez vous, je vais tres bien zfeiejznfkjejjeeeeeeeeeennnnjeznfkjenfkzejfnzejfnkzjenfkjzenfjzenfkzjenfkzejnfkzejnfzkejfnennnezjfnekzjfnzkejfnkzejfnkzjfnejzkfnkzjenfkzejfnkzejfnkezjnfzjkenfekzjnfzkejfnzkejfnjefnzknfzekjnfzkejnekjfznfejzefjzekfjnzejkfnzekjfnzkejfnkzjefnkzejfnkzejfnkzejfnzkejfnkzejfnkezjn")
     
     #On encode le message dans l'image
-    image1_stego = lsb_basic_encodeur_v2(str(image1_originale_path), message1_original, header_len16, b)
+    image1_stego = lsb_lab_encodeur(str(image1_originale_path), message1_original, header_len16, b)
     
     #On sauvegarde l'image stego
     cv2.imwrite(str(resultats_dir / "image1_stego.bmp"), image1_stego)
@@ -63,7 +65,7 @@ if __name__ == "__main__":
     image1_stego_path = resultats_dir / "image1_stego.bmp"
     
     #On decode le message de l'image
-    message1_stego = lsb_basic_decodeur_v2(str(image1_stego_path), header_len16, b)
+    message1_stego = lsb_lab_decodeur(str(image1_stego_path), header_len16, b)
     
     if image1_stego is None:
         print("Erreur : Le décodage a échoué")
@@ -109,6 +111,3 @@ if __name__ == "__main__":
     #SSIM
     ssim, ssim_map = cv2.quality.QualitySSIM_compute(image1, image1_stego)
     print("SSIM:", ssim[0])
-    
-    print()
-    print()

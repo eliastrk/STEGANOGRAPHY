@@ -29,7 +29,7 @@ if __name__ == "__main__":
     #IMAGE 1 RGB
 
     #Path de l'image 1
-    image1_path = project_root / "DB_STEGANOGRAPHIE" / "RGB-BMP Steganalysis Dataset" / "CALTECH-BMP-1500" / "C0003.bmp"
+    image1_path = project_root / "DB_STEGANOGRAPHIE" / "RGB-BMP Steganalysis Dataset" / "CALTECH-BMP-1500" / "C0002.bmp"
     resultats_dir = script_dir / "resultats"
     resultats_dir.mkdir(parents=True, exist_ok=True)
 

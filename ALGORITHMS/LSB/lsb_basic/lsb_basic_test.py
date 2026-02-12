@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import cv2
+import numpy as np
 
 script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parents[2]

@@ -8,7 +8,7 @@ import numpy as np
 from ALGORITHMS.LSB.functions_lsb import choix_delta, modif_bit, build_binary_lsb
 
 
-def lsb_basic_encodeur_v2(image_path: str, message: str, header_len: int, canal: int) -> Optional[np.ndarray]:
+def lsb_lab_encodeur(image_path: str, message: str, header_len: int, canal: int) -> Optional[np.ndarray]:
     """
     Encode un message texte avec lsb dans un canal de l'image de lab.
     La longueur du message (en bits) est d'abord écrite dans un en-tête de header_len bits, 
@@ -23,19 +23,21 @@ def lsb_basic_encodeur_v2(image_path: str, message: str, header_len: int, canal:
     Returns:
         np.ndarray: L'image modifiée avec le message caché dedans, None si erreur
     """
-    
-    #On charge l'_path sous la forme d'une matrice à 3 dimensions 
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
-    
+    #On charge l'_path sous la forme d'une matrice à 3 dimensions
+    img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+
     #Si on arrive pas à charger l'image
     if img is None:
         print("Erreur : Impossible de charger l'image")
         return None
     
+    #On charge LAB
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
+    
     #Si il y a pas assez de pixels pour cacher le message
     len_message = len(message)*8
     total_len = len_message + header_len
-    h, w = img.shape[:2]
+    h, w = lab.shape[:2]
     total_pixels = h*w
     
     if total_pixels < total_len:
@@ -54,11 +56,10 @@ def lsb_basic_encodeur_v2(image_path: str, message: str, header_len: int, canal:
     for i in range(h):
         for j in range(w):
             
-            val = img[i, j, canal]
-            val_int = int(val)
+            val_int = int(lab[i, j, canal])
             
             #Choix de delta
-            delta = choix_delta(val)
+            delta = choix_delta(val_int)
             
             #Taille du message dans le header
             if index_pixel < header_len: 
@@ -75,19 +76,20 @@ def lsb_basic_encodeur_v2(image_path: str, message: str, header_len: int, canal:
                     index_bit = 0
                     index_message += 1
             
-            img[i, j, canal] = val_int
-            
+            #print(lab[i, j, canal])
+            lab[i, j, canal] = val_int
             
             index_pixel += 1
             
             #On sort complètement de la boucle quand on a parcourut le nombre de pixels necessaires
             if index_pixel >= total_len :
-                return img
+                rgb = cv2.cvtColor(lab, cv2.COLOR_Lab2BGR)
+                return rgb
         
-    return img
+    return cv2.cvtColor(lab, cv2.COLOR_Lab2BGR)
 
 
-def lsb_basic_decodeur_v2(image_path: str, header_len: int, canal: int) -> Optional[str]:
+def lsb_lab_decodeur(image_path: str, header_len: int, canal: int) -> Optional[str]:
     """
     Décode un message texte avec lsb dans un canal de l'image.
     La longueur du message (en bits) se situe dans un en-tête de header_len bits, 
@@ -103,12 +105,16 @@ def lsb_basic_decodeur_v2(image_path: str, header_len: int, canal: int) -> Optio
     """
     
     #On charge l'_path sous la forme d'une matrice à 3 dimensions 
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
-    
+    #On charge l'_path sous la forme d'une matrice à 3 dimensions
+    img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+
     #Si on arrive pas à charger l'image
     if img is None:
         print("Erreur : Impossible de charger l'image")
         return None
+    
+    #On charge LAB
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
     
     #Initialisations des variables pour le parcours des pixels
     index_pixel = 0
@@ -118,7 +124,7 @@ def lsb_basic_decodeur_v2(image_path: str, header_len: int, canal: int) -> Optio
     message = ""
     
     #On regarde la valeur de chaque pixel dans le canal choisi en argument
-    for i in img:
+    for i in lab:
         for j in i:
             
             #grayscale ou non
